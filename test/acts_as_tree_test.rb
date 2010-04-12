@@ -3,6 +3,8 @@ require 'test/unit'
 require 'rubygems'
 require 'active_record'
 
+require 'flexmock/test_unit'
+
 require "#{File.dirname(__FILE__)}/../lib/acts_as_tree"
 
 class Test::Unit::TestCase
@@ -42,8 +44,12 @@ end
 class Mixin < ActiveRecord::Base
 end
 
-class TreeMixin < Mixin 
+class TreeMixin < Mixin
   acts_as_tree :foreign_key => "parent_id", :order => "id"
+end
+
+class TreeMixinWithCallbacks < Mixin
+  acts_as_tree :foreign_key => "parent_id", :order => "id", :after_add => :after_add_callback, :after_remove => :after_remove_callback, :before_add => :before_add_callback, :before_remove => :before_remove_callback
 end
 
 class TreeMixinWithoutOrder < Mixin
@@ -56,7 +62,7 @@ class RecursivelyCascadedTreeMixin < Mixin
 end
 
 class TreeTest < Test::Unit::TestCase
-  
+
   def setup
     setup_db
     @root1 = TreeMixin.create!
@@ -145,12 +151,12 @@ class TreeTest < Test::Unit::TestCase
     assert_equal [@root_child1, @root_child2], @root_child2.self_and_siblings
     assert_equal [@root1, @root2, @root3], @root2.self_and_siblings
     assert_equal [@root1, @root2, @root3], @root3.self_and_siblings
-  end           
+  end
 end
 
 class TreeTestWithEagerLoading < Test::Unit::TestCase
-  
-  def setup 
+
+  def setup
     teardown_db
     setup_db
     @root1 = TreeMixin.create!
@@ -159,9 +165,9 @@ class TreeTestWithEagerLoading < Test::Unit::TestCase
     @root_child2 = TreeMixin.create! :parent_id => @root1.id
     @root2 = TreeMixin.create!
     @root3 = TreeMixin.create!
-    
+
     @rc1 = RecursivelyCascadedTreeMixin.create!
-    @rc2 = RecursivelyCascadedTreeMixin.create! :parent_id => @rc1.id 
+    @rc2 = RecursivelyCascadedTreeMixin.create! :parent_id => @rc1.id
     @rc3 = RecursivelyCascadedTreeMixin.create! :parent_id => @rc2.id
     @rc4 = RecursivelyCascadedTreeMixin.create! :parent_id => @rc3.id
   end
@@ -169,36 +175,36 @@ class TreeTestWithEagerLoading < Test::Unit::TestCase
   def teardown
     teardown_db
   end
-    
+
   def test_eager_association_loading
     roots = TreeMixin.find(:all, :include => :children, :conditions => "mixins.parent_id IS NULL", :order => "mixins.id")
-    assert_equal [@root1, @root2, @root3], roots                     
+    assert_equal [@root1, @root2, @root3], roots
     assert_no_queries do
       assert_equal 2, roots[0].children.size
       assert_equal 0, roots[1].children.size
       assert_equal 0, roots[2].children.size
-    end   
+    end
   end
-  
+
   def test_eager_association_loading_with_recursive_cascading_three_levels_has_many
     root_node = RecursivelyCascadedTreeMixin.find(:first, :include => { :children => { :children => :children } }, :order => 'mixins.id')
     assert_equal @rc4, assert_no_queries { root_node.children.first.children.first.children.first }
   end
-  
+
   def test_eager_association_loading_with_recursive_cascading_three_levels_has_one
     root_node = RecursivelyCascadedTreeMixin.find(:first, :include => { :first_child => { :first_child => :first_child } }, :order => 'mixins.id')
     assert_equal @rc4, assert_no_queries { root_node.first_child.first_child.first_child }
   end
-  
+
   def test_eager_association_loading_with_recursive_cascading_three_levels_belongs_to
     leaf_node = RecursivelyCascadedTreeMixin.find(:first, :include => { :parent => { :parent => :parent } }, :order => 'mixins.id DESC')
     assert_equal @rc1, assert_no_queries { leaf_node.parent.parent.parent }
-  end 
+  end
 end
 
 class TreeTestWithoutOrder < Test::Unit::TestCase
-  
-  def setup                               
+
+  def setup
     setup_db
     @root1 = TreeMixinWithoutOrder.create!
     @root2 = TreeMixinWithoutOrder.create!
@@ -211,8 +217,31 @@ class TreeTestWithoutOrder < Test::Unit::TestCase
   def test_root
     assert [@root1, @root2].include?(TreeMixinWithoutOrder.root)
   end
-  
+
   def test_roots
     assert_equal [], [@root1, @root2] - TreeMixinWithoutOrder.roots
   end
+end
+
+class TreeTestWithCallbacks < Test::Unit::TestCase
+
+  def setup
+    setup_db
+    @root = TreeMixinWithCallbacks.create!
+  end
+
+  def teardown
+    teardown_db
+  end
+
+  def test_all_callbacks
+    @root = flexmock(@root)
+    @root.should_receive(:before_add_callback)
+    @root.should_receive(:after_add_callback)
+    @child = @root.children.create!
+    @root.should_receive(:before_remove_callback)
+    @root.should_receive(:after_remove_callback)
+    @root.children.delete(@child)
+  end
+
 end
