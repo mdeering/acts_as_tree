@@ -21,8 +21,8 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "VERSION",
-     "acts_as_tree.gemspec",
      "lib/acts_as_tree.rb",
+     "mdeering-acts_as_tree.gemspec",
      "test/acts_as_tree_test.rb"
   ]
   s.homepage = %q{http://github.com/mdeering/acts_as_tree}
