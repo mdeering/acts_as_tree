@@ -4,12 +4,12 @@ require 'rake'
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
-    gem.name = "acts_as_tree"
-    gem.summary = %Q{Gem version of acts_as_tree Rails plugin.}
+    gem.name = "mdeering-acts_as_tree"
+    gem.summary = %Q{Gem version of acts_as_tree Rails plugin. With association callbacks added in.}
     gem.description = %Q{Specify this acts_as extension if you want to model a tree structure by providing a parent association and a children association.}
-    gem.email = "erik.dahlstrand@gmail.com"
-    gem.homepage = "http://github.com/erdah/acts_as_tree"
-    gem.authors = ["Erik Dahlstrand", "Rails Core"]
+    gem.email = "mdeering@mdeering.com"
+    gem.homepage = "http://github.com/mdeering/acts_as_tree"
+    gem.authors = ["Michael Deering", "Erik Dahlstrand", "Rails Core"]
   end
 rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
