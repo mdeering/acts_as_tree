@@ -5,12 +5,18 @@ association. This requires that you have a foreign key column, which by default 
 
 == Install
 
-  gem install acts_as_tree --source http://gemcutter.org
+  gem install mdeering-acts_as_tree
 
 == Example
 
   class Category < ActiveRecord::Base
-    acts_as_tree :order => "name"
+    acts_as_tree :order => "name", :before_add => :do_something
+
+    private
+
+      def do_something(child)
+        # add your actions here...
+      end
   end
 
   Example:
